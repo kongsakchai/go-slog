@@ -23,10 +23,20 @@ func setLogLevel(level string) {
 	}
 }
 
-func newLogger() *slog.Logger {
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+func defaultLogger() *slog.Logger {
+	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level:       logLevel,
 		ReplaceAttr: replaceHandler,
+	}))
+
+	return logger
+}
+
+func customLogger() *slog.Logger {
+	logger = slog.New(newTextHandler(os.Stdout, handlerOptions{
+		level:       logLevel,
+		replaceAttr: replaceHandler,
+		timeFormat:  "[2006-01-02 15:04:05]",
 	}))
 	slog.SetDefault(logger)
 
