@@ -176,7 +176,7 @@ func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
 			//
 			// Adapted from the code in fmt/print.go.
 			if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
-				buf.WriteString("<nil>")
+				buf.WriteString("nil")
 				return
 			}
 
@@ -185,7 +185,8 @@ func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
 		}
 	}()
 
-	switch v.Kind() {
+	kind := v.Kind()
+	switch kind {
 	case slog.KindString:
 		*buf = strconv.AppendQuote(*buf, v.String())
 	case slog.KindTime:
@@ -212,7 +213,8 @@ func appendAny(b []byte, v any) []byte {
 }
 
 func appendWithRefect(b []byte, v reflect.Value) []byte {
-	switch v.Kind() {
+	kind := v.Kind()
+	switch kind {
 	case reflect.String:
 		return append(b, v.String()...)
 	case reflect.Bool:
@@ -224,14 +226,14 @@ func appendWithRefect(b []byte, v reflect.Value) []byte {
 	case reflect.Float32, reflect.Float64:
 		return strconv.AppendFloat(b, v.Float(), 'g', -1, 64)
 	case reflect.Slice, reflect.Array:
-		if v.IsNil() {
+		if kind == reflect.Slice && v.IsNil() {
 			return append(b, "nil"...)
 		}
 
 		b = append(b, '[')
 		for i := range v.Len() {
 			if i > 0 {
-				b = append(b, ", "...)
+				b = append(b, ',', ' ')
 			}
 			b = appendWithRefect(b, v.Index(i))
 		}
@@ -245,7 +247,7 @@ func appendWithRefect(b []byte, v reflect.Value) []byte {
 		b = append(b, '{')
 		for i, key := range v.MapKeys() {
 			if i > 0 {
-				b = append(b, ", "...)
+				b = append(b, ',', ' ')
 			}
 			b = appendWithRefect(b, key)
 			b = append(b, ':')
@@ -256,10 +258,15 @@ func appendWithRefect(b []byte, v reflect.Value) []byte {
 	case reflect.Struct:
 		b = append(b, '{')
 		for i := range v.NumField() {
-			if i > 0 {
-				b = append(b, ", "...)
-			}
 			field := v.Type().Field(i)
+			if !field.IsExported() {
+				continue
+			}
+
+			if i > 0 {
+				b = append(b, ',', ' ')
+			}
+
 			b = append(b, field.Name...)
 			b = append(b, ':')
 			b = appendWithRefect(b, v.Field(i))
