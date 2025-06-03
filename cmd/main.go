@@ -16,16 +16,31 @@ func main() {
 	logTest(goslog.CustomLogger(os.Stdout))
 }
 
+type address struct {
+	Street string
+	City   string
+	State  string
+}
+
 type data struct {
 	Name  string
 	Age   int
 	Email string
+	Addr  *address
 }
 
 var datas = []data{
-	{Name: "Alice", Age: 30, Email: "alice@email"},
-	{Name: "Bob", Age: 25, Email: "bob@email"},
-	{Name: "Charlie", Age: 35, Email: "charlie@email"},
+	{Name: "Alice", Age: 30, Email: "alice@email", Addr: &address{
+		Street: "123 Main St",
+		City:   "Anytown",
+		State:  "CA",
+	}},
+	{Name: "Bob", Age: 25, Email: "bob@email", Addr: &address{
+		Street: "456 Elm St",
+		City:   "Othertown",
+		State:  "TX",
+	}},
+	{Name: "Charlie", Age: 35, Email: "charlie@email", Addr: nil},
 }
 
 func logTest(l *slog.Logger) {

@@ -20,7 +20,7 @@ func (b *customSlogBench) new(w io.Writer) logBenchmark {
 
 func (b *customSlogBench) newWithCtx(w io.Writer) logBenchmark {
 	return &customSlogBench{
-		l: goslog.CustomLoggerWithAttrs(w, sslogAttrs),
+		l: goslog.CustomLoggerWithAttrs(w, slogAttrs()),
 	}
 }
 
@@ -41,7 +41,7 @@ func (b *customSlogBench) logEventCtx(msg string) {
 		context.Background(),
 		slog.LevelInfo,
 		msg,
-		sslogAttrs...,
+		slogAttrs()...,
 	)
 }
 
@@ -62,7 +62,7 @@ func (b *customSlogBench) logDisabledCtx(msg string) {
 		context.Background(),
 		slog.LevelDebug,
 		msg,
-		sslogAttrs...,
+		slogAttrs()...,
 	)
 }
 

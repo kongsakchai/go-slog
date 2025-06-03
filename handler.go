@@ -2,7 +2,6 @@ package goslog
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -202,21 +201,80 @@ func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
 	case slog.KindDuration:
 		*buf = strconv.AppendInt(*buf, int64(v.Duration()), 10)
 	case slog.KindAny:
-		data, err := json.Marshal(v.Any())
-		if err != nil {
-			buf.WriteString(fmt.Sprintf("%+v", v.Any()))
-			return
-		}
-
-		for _, b := range data {
-			if b == '\n' || b == '\r' || b == '\t' || b == '"' {
-				continue
-			}
-			buf.WriteByte(b)
-		}
+		*buf = appendAny(*buf, v.Any())
 	}
 
 	buf.WriteByte(' ')
+}
+
+func appendAny(b []byte, v any) []byte {
+	return appendWithRefect(b, reflect.ValueOf(v))
+}
+
+func appendWithRefect(b []byte, v reflect.Value) []byte {
+	switch v.Kind() {
+	case reflect.String:
+		return append(b, v.String()...)
+	case reflect.Bool:
+		return strconv.AppendBool(b, v.Bool())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.AppendInt(b, v.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.AppendUint(b, v.Uint(), 10)
+	case reflect.Float32, reflect.Float64:
+		return strconv.AppendFloat(b, v.Float(), 'g', -1, 64)
+	case reflect.Slice, reflect.Array:
+		if v.IsNil() {
+			return append(b, "nil"...)
+		}
+
+		b = append(b, '[')
+		for i := range v.Len() {
+			if i > 0 {
+				b = append(b, ", "...)
+			}
+			b = appendWithRefect(b, v.Index(i))
+		}
+
+		return append(b, ']')
+	case reflect.Map:
+		if v.IsNil() {
+			return append(b, "nil"...)
+		}
+
+		b = append(b, '{')
+		for i, key := range v.MapKeys() {
+			if i > 0 {
+				b = append(b, ", "...)
+			}
+			b = appendWithRefect(b, key)
+			b = append(b, ':')
+			b = appendWithRefect(b, v.MapIndex(key))
+		}
+
+		return append(b, '}')
+	case reflect.Struct:
+		b = append(b, '{')
+		for i := range v.NumField() {
+			if i > 0 {
+				b = append(b, ", "...)
+			}
+			field := v.Type().Field(i)
+			b = append(b, field.Name...)
+			b = append(b, ':')
+			b = appendWithRefect(b, v.Field(i))
+		}
+
+		return append(b, '}')
+	case reflect.Ptr:
+		if v.IsNil() {
+			return append(b, "nil"...)
+		}
+
+		return appendWithRefect(b, v.Elem())
+	}
+
+	return b
 }
 
 // copy from log/slog/handler.go
