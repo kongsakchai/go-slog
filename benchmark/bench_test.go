@@ -1,6 +1,7 @@
-package main
+package benchmark
 
 import (
+	"fmt"
 	"io"
 	"testing"
 )
@@ -32,6 +33,8 @@ func BenchmarkEvent(b *testing.B) {
 			}
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkDisabled tests the impact of logging at a disabled level for
@@ -52,6 +55,8 @@ func BenchmarkDisabled(b *testing.B) {
 			})
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkEventFmt tests the performance of logging a simple message with
@@ -81,6 +86,8 @@ func BenchmarkEventFmt(b *testing.B) {
 			}
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkDisabledFmt tests the performance of logging at a disabled level with
@@ -101,6 +108,8 @@ func BenchmarkDisabledFmt(b *testing.B) {
 			})
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkEventCtx test the performance impact of each library when
@@ -130,6 +139,8 @@ func BenchmarkEventCtx(b *testing.B) {
 			}
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkDisabledCtx tests the performance impact of logging an event
@@ -150,6 +161,8 @@ func BenchmarkDisabledCtx(b *testing.B) {
 			})
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkEventCtxWeak tests the impact of logging an event with weakly typed
@@ -179,6 +192,8 @@ func BenchmarkEventCtxWeak(b *testing.B) {
 			}
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkDisabledCtxWeak tests the impact of logging at a disabled level
@@ -199,6 +214,8 @@ func BenchmarkDisabledCtxWeak(b *testing.B) {
 			})
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkEventAccumulatedCtx tests the impact of creating a logger with
@@ -228,6 +245,8 @@ func BenchmarkEventAccumulatedCtx(b *testing.B) {
 			}
 		})
 	}
+
+	fmt.Println("=========================================================")
 }
 
 // BenchmarkDisabledAccumulatedCtx creates a logger with accumulated context,
@@ -248,4 +267,6 @@ func BenchmarkDisabledAccumulatedCtx(b *testing.B) {
 			})
 		})
 	}
+
+	fmt.Println("=========================================================")
 }

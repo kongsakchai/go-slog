@@ -1,4 +1,4 @@
-package main
+package benchmark
 
 import (
 	"errors"
@@ -97,6 +97,7 @@ var (
 )
 
 var loggers = []logBenchmark{
+	&zerologBench{},
 	&slogBench{},
 	&customSlogBench{},
 }
@@ -126,6 +127,18 @@ type logBenchmark interface {
 	logDisabledFmt(msg string, args ...any)
 	logDisabledCtx(msg string)
 	logDisabledCtxWeak(msg string)
+}
+
+var sslogAttrs = []slog.Attr{
+	slog.Int("bytes", ctxBodyBytes),
+	slog.String("request", ctxRequest),
+	slog.Float64("elapsed_time_ms", ctxTimeElapsedMs),
+	slog.Any("user", ctxUser),
+	slog.Time("now", ctxTime),
+	slog.Any("months", ctxMonths),
+	slog.Any("primes", ctxFirst10Primes),
+	slog.Any("users", ctxUsers),
+	slog.Any("error", ctxErr),
 }
 
 func slogAttrs() []slog.Attr {

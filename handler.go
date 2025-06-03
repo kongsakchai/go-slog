@@ -1,8 +1,8 @@
-package main
+package goslog
 
 import (
 	"context"
-	"encoding"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -168,6 +168,24 @@ func (h *textHandler) appendKey(buf *buffer, key string) {
 }
 
 func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
+	defer func() {
+		// Copied from log/slog/handler.go.
+		if r := recover(); r != nil {
+			// If it panics with a nil pointer, the most likely cases are
+			// an encoding.TextMarshaler or error fails to guard against nil,
+			// in which case "<nil>" seems to be the feasible choice.
+			//
+			// Adapted from the code in fmt/print.go.
+			if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
+				buf.WriteString("<nil>")
+				return
+			}
+
+			// Otherwise just print the original panic message.
+			buf.WriteString(fmt.Sprintf("<panic: %v>", r))
+		}
+	}()
+
 	switch v.Kind() {
 	case slog.KindString:
 		*buf = strconv.AppendQuote(*buf, v.String())
@@ -184,33 +202,17 @@ func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
 	case slog.KindDuration:
 		*buf = strconv.AppendInt(*buf, int64(v.Duration()), 10)
 	case slog.KindAny:
-		defer func() {
-			// Copied from log/slog/handler.go.
-			if r := recover(); r != nil {
-				// If it panics with a nil pointer, the most likely cases are
-				// an encoding.TextMarshaler or error fails to guard against nil,
-				// in which case "<nil>" seems to be the feasible choice.
-				//
-				// Adapted from the code in fmt/print.go.
-				if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
-					buf.WriteString("<nil>")
-					return
-				}
-
-				// Otherwise just print the original panic message.
-				buf.WriteString(fmt.Sprintf("<panic: %v>", r))
-			}
-		}()
-
-		switch cv := v.Any().(type) {
-		case encoding.TextMarshaler:
-			data, err := cv.MarshalText()
-			if err != nil {
-				break
-			}
-			buf.Write(data)
-		default:
+		data, err := json.Marshal(v.Any())
+		if err != nil {
 			buf.WriteString(fmt.Sprintf("%+v", v.Any()))
+			return
+		}
+
+		for _, b := range data {
+			if b == '\n' || b == '\r' || b == '\t' || b == '"' {
+				continue
+			}
+			buf.WriteByte(b)
 		}
 	}
 

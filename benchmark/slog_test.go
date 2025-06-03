@@ -1,8 +1,9 @@
-package main
+package benchmark
 
 import (
 	"context"
 	"fmt"
+	"goslog"
 	"io"
 	"log/slog"
 )
@@ -13,13 +14,13 @@ type slogBench struct {
 
 func (b *slogBench) new(w io.Writer) logBenchmark {
 	return &slogBench{
-		l: defaultLogger(w),
+		l: goslog.DefaultLogger(w),
 	}
 }
 
 func (b *slogBench) newWithCtx(w io.Writer) logBenchmark {
 	return &slogBench{
-		l: defaultLoggerWithAttrs(w, slogAttrs()),
+		l: goslog.DefaultLoggerWithAttrs(w, sslogAttrs),
 	}
 }
 
@@ -40,7 +41,7 @@ func (b *slogBench) logEventCtx(msg string) {
 		context.Background(),
 		slog.LevelInfo,
 		msg,
-		slogAttrs()...,
+		sslogAttrs...,
 	)
 }
 
@@ -61,7 +62,7 @@ func (b *slogBench) logDisabledCtx(msg string) {
 		context.Background(),
 		slog.LevelDebug,
 		msg,
-		slogAttrs()...,
+		sslogAttrs...,
 	)
 }
 
