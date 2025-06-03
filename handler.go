@@ -21,7 +21,7 @@ type handlerOptions struct {
 }
 
 type textHandler struct {
-	opts        handlerOptions
+	opts        *handlerOptions
 	attrPrefix  []byte
 	groupPrefix []byte
 
@@ -29,7 +29,14 @@ type textHandler struct {
 	w  io.Writer
 }
 
-func newTextHandler(w io.Writer, opts handlerOptions) *textHandler {
+func newTextHandler(w io.Writer, opts *handlerOptions) *textHandler {
+	if opts == nil {
+		opts = &handlerOptions{
+			level:      slog.LevelInfo,
+			timeFormat: time.RFC3339,
+		}
+	}
+
 	return &textHandler{
 		opts: opts,
 		w:    w,

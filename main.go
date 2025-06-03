@@ -13,10 +13,10 @@ func init() {
 func main() {
 
 	fmt.Println("Default Logger:")
-	logTest(defaultLogger())
+	logTest(defaultLogger(os.Stdout))
 
 	fmt.Println("\nCustom Logger:")
-	logTest(customLogger())
+	logTest(customLogger(os.Stdout))
 }
 
 func logTest(l *slog.Logger) {
