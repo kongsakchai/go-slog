@@ -84,6 +84,9 @@ func logTest(l *slog.Logger) {
 		}),
 		slog.Any("primes", []int{2, 3, 5, 7, 11, 13, 17, 23, 29, 31}),
 		"primes2", []int{2, 3, 5, 7, 11, 13, 17, 23, 29, 31},
-		slog.Any("users", datas),
+		slog.Group("users",
+			slog.String("type", "json"),
+			slog.Any("users", datas),
+		),
 	)
 }

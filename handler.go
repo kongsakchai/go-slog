@@ -22,7 +22,7 @@ type HandlerOptions struct {
 type textHandler struct {
 	opts        HandlerOptions
 	attrPrefix  []byte
-	groupPrefix []byte
+	groupPrefix string
 
 	mu sync.Mutex
 	w  io.Writer
@@ -51,27 +51,21 @@ func (h *textHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	for _, a := range attrs {
 		h.appendAttr(buf, a)
 	}
-	t := &textHandler{
-		opts:       h.opts,
-		w:          h.w,
-		attrPrefix: *buf,
+	return &textHandler{
+		opts:        h.opts,
+		w:           h.w,
+		attrPrefix:  *buf,
+		groupPrefix: h.groupPrefix,
 	}
-	return t
 }
 
 func (h *textHandler) WithGroup(name string) slog.Handler {
-	buf := newBuffer()
-	if len(name) > 0 {
-		buf.WriteString(name)
-		buf.WriteByte('.')
+	return &textHandler{
+		opts:        h.opts,
+		w:           h.w,
+		attrPrefix:  h.attrPrefix,
+		groupPrefix: name,
 	}
-
-	t := &textHandler{
-		opts:       h.opts,
-		w:          h.w,
-		attrPrefix: *buf,
-	}
-	return t
 }
 
 func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
@@ -143,24 +137,34 @@ func (h *textHandler) appendAttr(buf *buffer, a slog.Attr) {
 		return
 	}
 
-	if len(h.groupPrefix) > 0 {
-		buf.Write(h.groupPrefix)
-	}
-
 	if a.Value.Kind() == slog.KindGroup {
 		for _, group := range a.Value.Group() {
-			buf.WriteString(a.Key + ".")
-			h.appendKey(buf, group.Key)
+			h.appendKey(buf, h.groupPrefix, a.Key, group.Key)
 			h.appendValue(buf, group.Value)
 		}
 	} else {
-		h.appendKey(buf, a.Key)
+		h.appendKey(buf, h.groupPrefix, a.Key)
 		h.appendValue(buf, a.Value)
 	}
 }
 
-func (h *textHandler) appendKey(buf *buffer, key string) {
-	buf.WriteString(colorCyan + key + colorReset + "=")
+func (h *textHandler) appendKey(buf *buffer, keys ...string) {
+	buf.WriteString(colorCyan)
+
+	first := true
+	for _, key := range keys {
+		if key == "" {
+			continue
+		}
+		if !first {
+			buf.WriteByte('.')
+		}
+		buf.WriteString(key)
+		first = false
+	}
+
+	buf.WriteString(colorReset)
+	buf.WriteByte('=')
 }
 
 func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
@@ -199,14 +203,10 @@ func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
 	case slog.KindDuration:
 		*buf = strconv.AppendInt(*buf, int64(v.Duration()), 10)
 	case slog.KindAny:
-		*buf = appendAny(*buf, v.Any())
+		*buf = appendWithRefect(*buf, reflect.ValueOf(v.Any()))
 	}
 
 	buf.WriteByte(' ')
-}
-
-func appendAny(b []byte, v any) []byte {
-	return appendWithRefect(b, reflect.ValueOf(v))
 }
 
 func appendWithRefect(b []byte, v reflect.Value) []byte {
@@ -264,7 +264,7 @@ func appendWithRefect(b []byte, v reflect.Value) []byte {
 				b = append(b, ',', ' ')
 			}
 
-			b = append(b, (field.Name + ":")...)
+			b = append(b, field.Name...)
 			b = append(b, ':')
 			b = appendWithRefect(b, v.Field(i))
 		}
