@@ -93,28 +93,34 @@ func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
 	// Write Time
 	if !r.Time.IsZero() {
 		val := r.Time.Round(0)
-		buf.WriteString("\u001b[38;2;165;173;203m")
+		buf.WriteString(colorGray)
 		*buf = val.AppendFormat(*buf, h.opts.timeFormat)
-		buf.WriteString("\u001b[0m ")
+		buf.WriteString(colorResetWithSpace)
 	}
 
 	// Write Level
 	switch r.Level {
 	case slog.LevelError:
-		buf.WriteString("\u001b[38;2;237;135;160mERR\u001b[0m ")
+		buf.WriteString(colorRed)
+		buf.WriteString("ERR")
 	case slog.LevelWarn:
-		buf.WriteString("\u001b[38;2;238;212;159mWRN\u001b[0m ")
+		buf.WriteString(colorYellow)
+		buf.WriteString("WRN")
 	case slog.LevelInfo:
-		buf.WriteString("\u001b[38;2;166;218;149mINF\u001b[0m ")
+		buf.WriteString(colorGreen)
+		buf.WriteString("INF")
 	case slog.LevelDebug:
-		buf.WriteString("DBG ")
+		buf.WriteString("DBG")
 	}
+	buf.WriteString(colorResetWithSpace)
 
 	// Write Message
 	if r.Message != "" {
-		buf.WriteString("\u001b[1m\"")
+		buf.WriteByte('"')
+		buf.WriteString(boldText)
 		buf.WriteString(r.Message)
-		buf.WriteString("\"\u001b[0m ")
+		buf.WriteString(colorReset)
+		buf.WriteString("\" ")
 	}
 
 	// Wrote attrPrefix
@@ -161,9 +167,10 @@ func (h *textHandler) appendAttr(buf *buffer, a slog.Attr) {
 }
 
 func (h *textHandler) appendKey(buf *buffer, key string) {
-	buf.WriteString("\u001b[38;2;125;196;228m")
+	buf.WriteString(colorCyan)
 	buf.WriteString(key)
-	buf.WriteString("\u001b[0m=")
+	buf.WriteString(colorReset)
+	buf.WriteByte('=')
 }
 
 func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
