@@ -3,7 +3,6 @@ package benchmark
 import (
 	"context"
 	"fmt"
-	"goslog"
 	"io"
 	"log/slog"
 )
@@ -12,15 +11,31 @@ type slogBench struct {
 	l *slog.Logger
 }
 
+func DefaultLogger(w io.Writer) *slog.Logger {
+	logger := slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
+	return logger
+}
+
+func DefaultLoggerWithAttrs(w io.Writer, attrs []slog.Attr) *slog.Logger {
+	logger := slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}).WithAttrs(attrs))
+
+	return logger
+}
+
 func (b *slogBench) new(w io.Writer) logBenchmark {
 	return &slogBench{
-		l: goslog.DefaultLogger(w),
+		l: DefaultLogger(w),
 	}
 }
 
 func (b *slogBench) newWithCtx(w io.Writer) logBenchmark {
 	return &slogBench{
-		l: goslog.DefaultLoggerWithAttrs(w, slogAttrs()),
+		l: DefaultLoggerWithAttrs(w, slogAttrs()),
 	}
 }
 

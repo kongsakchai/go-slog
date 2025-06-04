@@ -10,10 +10,15 @@ import (
 
 func main() {
 	fmt.Println("Default Logger:")
-	logTest(goslog.DefaultLogger(os.Stdout))
+	logTest(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	})))
 
 	fmt.Println("\nCustom Logger:")
-	logTest(goslog.CustomLogger(os.Stdout))
+	logTest(slog.New(goslog.NewTextHandler(os.Stdout, &goslog.HandlerOptions{
+		Level:      slog.LevelInfo,
+		TimeFormat: "[2006-01-02 15:04:05]",
+	})))
 }
 
 type address struct {

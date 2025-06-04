@@ -12,15 +12,33 @@ type customSlogBench struct {
 	l *slog.Logger
 }
 
+func CustomLogger(w io.Writer) *slog.Logger {
+	logger := slog.New(goslog.NewTextHandler(w, &goslog.HandlerOptions{
+		Level:      slog.LevelInfo,
+		TimeFormat: "[2006-01-02 15:04:05]",
+	}))
+
+	return logger
+}
+
+func CustomLoggerWithAttrs(w io.Writer, attrs []slog.Attr) *slog.Logger {
+	logger := slog.New(goslog.NewTextHandler(w, &goslog.HandlerOptions{
+		Level:      slog.LevelInfo,
+		TimeFormat: "[2006-01-02 15:04:05]",
+	}).WithAttrs(attrs))
+
+	return logger
+}
+
 func (b *customSlogBench) new(w io.Writer) logBenchmark {
 	return &customSlogBench{
-		l: goslog.CustomLogger(w),
+		l: CustomLogger(w),
 	}
 }
 
 func (b *customSlogBench) newWithCtx(w io.Writer) logBenchmark {
 	return &customSlogBench{
-		l: goslog.CustomLoggerWithAttrs(w, slogAttrs()),
+		l: CustomLoggerWithAttrs(w, slogAttrs()),
 	}
 }
 

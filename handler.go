@@ -13,14 +13,14 @@ import (
 
 type replaceAttrFunc func(groups []string, a slog.Attr) slog.Attr
 
-type handlerOptions struct {
-	level       slog.Level
-	replaceAttr replaceAttrFunc
-	timeFormat  string
+type HandlerOptions struct {
+	Level       slog.Level
+	ReplaceAttr replaceAttrFunc
+	TimeFormat  string
 }
 
 type textHandler struct {
-	opts        *handlerOptions
+	opts        *HandlerOptions
 	attrPrefix  []byte
 	groupPrefix []byte
 
@@ -28,11 +28,11 @@ type textHandler struct {
 	w  io.Writer
 }
 
-func newTextHandler(w io.Writer, opts *handlerOptions) *textHandler {
+func NewTextHandler(w io.Writer, opts *HandlerOptions) *textHandler {
 	if opts == nil {
-		opts = &handlerOptions{
-			level:      slog.LevelInfo,
-			timeFormat: time.RFC3339,
+		opts = &HandlerOptions{
+			Level:      slog.LevelInfo,
+			TimeFormat: time.RFC3339,
 		}
 	}
 
@@ -43,7 +43,7 @@ func newTextHandler(w io.Writer, opts *handlerOptions) *textHandler {
 }
 
 func (h *textHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= h.opts.level.Level()
+	return level >= h.opts.Level.Level()
 }
 
 func (h *textHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
@@ -94,7 +94,7 @@ func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
 	if !r.Time.IsZero() {
 		val := r.Time.Round(0)
 		buf.WriteString(colorGray)
-		*buf = val.AppendFormat(*buf, h.opts.timeFormat)
+		*buf = val.AppendFormat(*buf, h.opts.TimeFormat)
 		buf.WriteString(colorResetWithSpace)
 	}
 
