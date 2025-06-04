@@ -20,7 +20,7 @@ type HandlerOptions struct {
 }
 
 type textHandler struct {
-	opts        *HandlerOptions
+	opts        HandlerOptions
 	attrPrefix  []byte
 	groupPrefix []byte
 
@@ -37,13 +37,13 @@ func NewTextHandler(w io.Writer, opts *HandlerOptions) *textHandler {
 	}
 
 	return &textHandler{
-		opts: opts,
+		opts: *opts,
 		w:    w,
 	}
 }
 
 func (h *textHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= h.opts.Level.Level()
+	return level >= h.opts.Level
 }
 
 func (h *textHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
