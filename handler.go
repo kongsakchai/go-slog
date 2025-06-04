@@ -101,26 +101,20 @@ func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
 	// Write Level
 	switch r.Level {
 	case slog.LevelError:
-		buf.WriteString(colorRed)
-		buf.WriteString("ERR")
+		buf.WriteString(colorRed + "ERR" + colorResetWithSpace)
 	case slog.LevelWarn:
-		buf.WriteString(colorYellow)
-		buf.WriteString("WRN")
+		buf.WriteString(colorYellow + "WRN" + colorResetWithSpace)
 	case slog.LevelInfo:
-		buf.WriteString(colorGreen)
-		buf.WriteString("INF")
+		buf.WriteString(colorGreen + "INF" + colorResetWithSpace)
 	case slog.LevelDebug:
 		buf.WriteString("DBG")
 	}
-	buf.WriteString(colorResetWithSpace)
 
 	// Write Message
 	if r.Message != "" {
-		buf.WriteByte('"')
-		buf.WriteString(boldText)
+		buf.WriteString(qouteText + boldText)
 		buf.WriteString(r.Message)
-		buf.WriteString(colorReset)
-		buf.WriteString("\" ")
+		buf.WriteString(colorReset + qouteText + " ")
 	}
 
 	// Wrote attrPrefix
@@ -155,8 +149,7 @@ func (h *textHandler) appendAttr(buf *buffer, a slog.Attr) {
 
 	if a.Value.Kind() == slog.KindGroup {
 		for _, group := range a.Value.Group() {
-			buf.WriteString(a.Key)
-			buf.WriteByte('.')
+			buf.WriteString(a.Key + ".")
 			h.appendKey(buf, group.Key)
 			h.appendValue(buf, group.Value)
 		}
@@ -167,10 +160,7 @@ func (h *textHandler) appendAttr(buf *buffer, a slog.Attr) {
 }
 
 func (h *textHandler) appendKey(buf *buffer, key string) {
-	buf.WriteString(colorCyan)
-	buf.WriteString(key)
-	buf.WriteString(colorReset)
-	buf.WriteByte('=')
+	buf.WriteString(colorCyan + key + colorReset + "=")
 }
 
 func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
@@ -274,7 +264,7 @@ func appendWithRefect(b []byte, v reflect.Value) []byte {
 				b = append(b, ',', ' ')
 			}
 
-			b = append(b, field.Name...)
+			b = append(b, (field.Name + ":")...)
 			b = append(b, ':')
 			b = appendWithRefect(b, v.Field(i))
 		}

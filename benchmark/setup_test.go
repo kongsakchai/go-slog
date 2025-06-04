@@ -152,5 +152,9 @@ func slogAttrs() []slog.Attr {
 		slog.Any("primes", ctxFirst10Primes),
 		slog.Any("users", ctxUsers),
 		slog.Any("error", ctxErr),
+		slog.Group("group1",
+			slog.Int("bytes", ctxBodyBytes),
+			slog.String("request", ctxRequest),
+		),
 	}
 }

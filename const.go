@@ -9,5 +9,6 @@ const (
 	colorReset          = "\033[0m"
 	colorResetWithSpace = "\033[0m "
 
-	boldText = "\033[1m"
+	boldText  = "\033[1m"
+	qouteText = "\""
 )
