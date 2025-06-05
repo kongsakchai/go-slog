@@ -20,9 +20,9 @@ type HandlerOptions struct {
 }
 
 type textHandler struct {
-	opts        HandlerOptions
-	attrPrefix  []byte
-	groupPrefix string
+	opts       HandlerOptions
+	attrPrefix []byte
+	groups     []string
 
 	mu sync.Mutex
 	w  io.Writer
@@ -37,8 +37,9 @@ func NewTextHandler(w io.Writer, opts *HandlerOptions) *textHandler {
 	}
 
 	return &textHandler{
-		opts: *opts,
-		w:    w,
+		opts:   *opts,
+		w:      w,
+		groups: make([]string, 0),
 	}
 }
 
@@ -52,19 +53,25 @@ func (h *textHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 		h.appendAttr(buf, a)
 	}
 	return &textHandler{
-		opts:        h.opts,
-		w:           h.w,
-		attrPrefix:  *buf,
-		groupPrefix: h.groupPrefix,
+		opts:       h.opts,
+		w:          h.w,
+		attrPrefix: *buf,
+		groups:     h.groups,
 	}
 }
 
 func (h *textHandler) WithGroup(name string) slog.Handler {
+	gs := make([]string, len(h.groups)+1)
+	if len(h.groups) > 0 {
+		copy(gs, h.groups)
+	}
+	gs[len(gs)-1] = name
+
 	return &textHandler{
-		opts:        h.opts,
-		w:           h.w,
-		attrPrefix:  h.attrPrefix,
-		groupPrefix: name,
+		opts:       h.opts,
+		w:          h.w,
+		attrPrefix: h.attrPrefix,
+		groups:     gs,
 	}
 }
 
@@ -86,7 +93,14 @@ func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	// Write Time
 	if !r.Time.IsZero() {
-		val := r.Time.Round(0)
+		var val time.Time
+		if rep := h.opts.ReplaceAttr; rep != nil {
+			t := rep(h.groups, slog.Time(slog.TimeKey, r.Time))
+			val = t.Value.Time().Round(0)
+		} else {
+			val = r.Time.Round(0)
+		}
+
 		buf.WriteString(colorGray)
 		*buf = val.AppendFormat(*buf, h.opts.TimeFormat)
 		buf.WriteString(colorResetWithSpace)
@@ -112,7 +126,8 @@ func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
 	}
 
 	// Wrote attrPrefix
-	if len(h.attrPrefix) > 0 {
+	prefix := h.attrPrefix
+	if len(prefix) > 0 {
 		buf.Write(h.attrPrefix)
 	}
 
@@ -137,32 +152,45 @@ func (h *textHandler) appendAttr(buf *buffer, a slog.Attr) {
 		return
 	}
 
+	if rep := h.opts.ReplaceAttr; rep != nil && a.Value.Kind() == slog.KindGroup {
+		a = rep(h.groups, a)
+		a.Value = a.Value.Resolve()
+	}
+
 	if a.Value.Kind() == slog.KindGroup {
 		for _, group := range a.Value.Group() {
-			h.appendKey(buf, h.groupPrefix, a.Key, group.Key)
-			h.appendValue(buf, group.Value)
+			h.openGroup(a.Key)
+			h.appendAttr(buf, group)
+			h.closeGroup()
 		}
 	} else {
-		h.appendKey(buf, h.groupPrefix, a.Key)
+		h.appendKey(buf, a.Key)
 		h.appendValue(buf, a.Value)
 	}
 }
 
-func (h *textHandler) appendKey(buf *buffer, keys ...string) {
-	buf.WriteString(colorCyan)
+func (h *textHandler) openGroup(key string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.groups = append(h.groups, key)
+}
 
-	first := true
-	for _, key := range keys {
-		if key == "" {
-			continue
-		}
-		if !first {
-			buf.WriteByte('.')
-		}
+func (h *textHandler) closeGroup() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if len(h.groups) > 0 {
+		h.groups = h.groups[:len(h.groups)-1]
+	}
+}
+
+func (h *textHandler) appendKey(buf *buffer, keys string) {
+	buf.WriteString(colorCyan)
+	for _, key := range h.groups {
 		buf.WriteString(key)
-		first = false
+		buf.WriteByte('.')
 	}
 
+	buf.WriteString(keys)
 	buf.WriteString(colorReset)
 	buf.WriteByte('=')
 }
